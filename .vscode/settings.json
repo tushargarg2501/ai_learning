@@ -1,0 +1,10 @@
+{
+    "python.terminal.useEnvFile": true,
+    "python-envs.pythonProjects": [
+        {
+            "path": "langchain_learning/langchain_basics.py",
+            "envManager": "ms-python.python:venv",
+            "packageManager": "ms-python.python:pip"
+        }
+    ]
+}
