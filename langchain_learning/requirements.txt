@@ -1,3 +1,9 @@
 langchain-ollama
 langchain-core
 pydantic
+transformers
+torch
+datasets
+python-dotenv
+xgboost
+scikit-learn
