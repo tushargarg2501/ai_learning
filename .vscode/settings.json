@@ -1,4 +1,5 @@
 {
+    "python.defaultInterpreterPath": "${workspaceFolder}/langchain_learning/.venv-rag/bin/python",
     "python.terminal.useEnvFile": true,
     "python-envs.pythonProjects": [
         {
