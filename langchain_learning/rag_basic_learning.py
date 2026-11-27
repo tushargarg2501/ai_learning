@@ -16,6 +16,7 @@ from langchain_pinecone import PineconeVectorStore
 from langchain_ollama import ChatOllama
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pinecone import Pinecone, ServerlessSpec
+from sentence_transformers import CrossEncoder
 
 PROJECT_DIR = Path(__file__).resolve().parent
 load_dotenv(PROJECT_DIR / ".env")
@@ -119,9 +120,21 @@ multi_query_retriever = MultiQueryRetriever.from_llm(
 )
 multi_query_docs = multi_query_retriever.invoke(query_text)
 
-print(f"\nMulti-query results for {query_text!r}:")
-for document in multi_query_docs:
+reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
+rerank_inputs = [
+    (query_text, document.page_content) for document in multi_query_docs
+]
+rerank_scores = reranker.predict(rerank_inputs)
+reranked_results = sorted(
+    zip(multi_query_docs, rerank_scores),
+    key=lambda result: float(result[1]),
+    reverse=True,
+)
+
+print(f"\nMulti-query candidates reranked for {query_text!r}:")
+for document, score in reranked_results[:3]:
     print(
+        f"rerank_score={float(score):.4f} "
         f"category={document.metadata.get('category', '')} "
         f"source={document.metadata.get('source', '')}"
     )
@@ -160,4 +173,3 @@ for document in self_query_docs:
         f"source={document.metadata.get('source', '')}"
     )
     print(document.page_content)
-
