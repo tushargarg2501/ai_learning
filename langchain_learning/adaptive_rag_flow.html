@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta
+    name="description"
+    content="Interactive flow diagram explaining the Adaptive RAG and CRAG coffee example."
+  >
+  <title>Adaptive RAG + CRAG Flow</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      color: #172033;
+      background: #f4f7fb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 3rem 1.25rem 2rem;
+      color: #fff;
+      background: linear-gradient(125deg, #173b67, #3858a6);
+    }
+
+    .header-content,
+    main {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      line-height: 1.15;
+    }
+
+    header p {
+      max-width: 760px;
+      margin: 1rem 0 0;
+      color: #e3eafe;
+      font-size: 1.08rem;
+    }
+
+    main {
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    section {
+      margin: 1.5rem 0;
+      padding: clamp(1.1rem, 3vw, 2rem);
+      border: 1px solid #dfe6f0;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 12px 32px rgb(23 32 51 / 5%);
+    }
+
+    h2 {
+      margin: 0 0 0.6rem;
+      font-size: 1.55rem;
+      line-height: 1.3;
+    }
+
+    .muted {
+      color: #5c6678;
+    }
+
+    .diagram-wrap {
+      overflow-x: auto;
+      margin-top: 1.25rem;
+      padding: 1rem;
+      border-radius: 12px;
+      background: #fbfcff;
+    }
+
+    .mermaid {
+      min-width: 760px;
+      text-align: center;
+    }
+
+    .routes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1rem;
+      margin-top: 1.2rem;
+    }
+
+    .route-card {
+      padding: 1.15rem;
+      border: 1px solid #e1e7f0;
+      border-top: 4px solid #5176d1;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .route-card:nth-child(2) {
+      border-top-color: #9a62c7;
+    }
+
+    .route-card:nth-child(3) {
+      border-top-color: #229879;
+    }
+
+    .route-card h3 {
+      margin: 0 0 0.45rem;
+      font-size: 1.1rem;
+    }
+
+    .route-card p {
+      margin: 0.45rem 0;
+    }
+
+    .example {
+      display: block;
+      margin-top: 0.75rem;
+      padding: 0.7rem 0.8rem;
+      border-radius: 8px;
+      color: #263d70;
+      background: #eef3ff;
+      font-style: italic;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 0.85rem;
+      margin: 1rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .scenario-list li {
+      padding: 1rem 1.1rem;
+      border-left: 4px solid #229879;
+      border-radius: 8px;
+      background: #f3fbf8;
+    }
+
+    .scenario-list li:nth-child(2) {
+      border-left-color: #d58c25;
+      background: #fff9ef;
+    }
+
+    .scenario-list li:nth-child(3) {
+      border-left-color: #778196;
+      background: #f5f6f8;
+    }
+
+    .note {
+      padding: 1rem 1.1rem;
+      border-radius: 10px;
+      color: #37445d;
+      background: #f0f3f9;
+    }
+
+    .trace-list {
+      display: grid;
+      gap: 0.9rem;
+      margin: 1.2rem 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: trace-step;
+    }
+
+    .trace-list li {
+      position: relative;
+      padding: 1rem 1rem 1rem 3.5rem;
+      border: 1px solid #e1e7f0;
+      border-radius: 12px;
+      background: #fbfcff;
+      counter-increment: trace-step;
+    }
+
+    .trace-list li::before {
+      position: absolute;
+      top: 0.9rem;
+      left: 1rem;
+      display: grid;
+      width: 1.8rem;
+      height: 1.8rem;
+      place-items: center;
+      border-radius: 50%;
+      color: #fff;
+      background: #3858a6;
+      content: counter(trace-step);
+      font-weight: 700;
+    }
+
+    .trace-list p {
+      margin: 0.35rem 0 0;
+    }
+
+    .code-note {
+      display: block;
+      margin-top: 0.6rem;
+      color: #4a5870;
+      font-size: 0.92rem;
+    }
+
+    code {
+      padding: 0.12rem 0.35rem;
+      border-radius: 5px;
+      background: #edf0f6;
+      font-size: 0.92em;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        padding-top: 2.25rem;
+      }
+
+      main {
+        padding-inline: 0.8rem;
+      }
+
+      section {
+        padding: 1rem;
+      }
+    }
+  </style>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "base",
+      flowchart: {
+        curve: "basis",
+        htmlLabels: true,
+        nodeSpacing: 42,
+        rankSpacing: 54
+      },
+      themeVariables: {
+        primaryColor: "#eaf0ff",
+        primaryTextColor: "#172033",
+        primaryBorderColor: "#6684d2",
+        lineColor: "#64748b",
+        secondaryColor: "#f3eaff",
+        tertiaryColor: "#e6f7f1",
+        fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif"
+      }
+    });
+  </script>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <h1>Adaptive RAG + CRAG</h1>
+      <p>
+        How the coffee-guide example selects a retrieval strategy, checks whether
+        its evidence is enough, and searches the web when the local knowledge base
+        cannot answer.
+      </p>
+    </div>
+  </header>
+
+  <main>
+    <section aria-labelledby="flow-heading">
+      <h2 id="flow-heading">End-to-end flow</h2>
+      <p class="muted">
+        The router chooses one retrieval method. CRAG then evaluates the returned
+        passages before they reach answer generation.
+      </p>
+      <div class="diagram-wrap">
+        <pre class="mermaid">
+flowchart TD
+    A([Start]) --> B[Load .env and check Pinecone API key]
+    B --> E[/Enter a question/]
+    E --> C[Load coffee HTML pages]
+    C --> C1[Add category metadata and split into chunks]
+    C1 --> D[Embed with Ollama nomic-embed-text<br/>and upsert to coffeeindex-ollama]
+    D --> F{Does it name a category<br/>and ask for a guide, page,<br/>category, only, or document?}
+
+    F -- Yes --> G[Self-Query]
+    G --> G1[LLM extracts semantic query<br/>and category filter]
+    G1 --> J[Retrieve candidate passages]
+
+    F -- No --> H{Does it contain a broad or<br/>comparative cue?}
+    H -- Yes --> I[MultiQuery]
+    I --> I1[Generate alternate question phrasings<br/>and retrieve for each]
+    I1 --> J
+    H -- No --> K[Simple similarity search]
+    K --> J
+
+    J --> L[Deduplicate candidates]
+    L --> M{CRAG: does a local LLM grader<br/>judge the passages sufficient<br/>to answer the question?}
+    M -- Yes --> P[Keep local passages]
+    M -- No, or no candidates --> N[Try Yahoo, Brave, Startpage, then Mojeek]
+    N --> O{Any search results<br/>with snippets?}
+    O -- No --> Q([Stop: report no usable evidence])
+    O -- Yes --> R[Convert web results to documents]
+    P --> S[CrossEncoder reranks evidence]
+    R --> S
+    S --> T[Keep top 3 passages]
+    T --> U[Generate answer using only selected context<br/>and cite filenames or URLs]
+    U --> V([Return answer])
+        </pre>
+      </div>
+    </section>
+
+    <section aria-labelledby="trace-heading">
+      <h2 id="trace-heading">Worked trace for your question</h2>
+      <p class="note">
+        <strong>Your question:</strong>
+        “How does the code determine that the proper document wasn’t found in
+        Pinecone and that it should call the web?”
+      </p>
+      <ol class="trace-list">
+        <li>
+          <strong>Read configuration and prompt for the question.</strong>
+          <p>
+            <code>main()</code> loads <code>.env</code>, checks that
+            <code>PINECONE_API_KEY</code> exists, then reads the question. Since
+            you provided one, it uses that text rather than the sample question.
+          </p>
+        </li>
+        <li>
+          <strong>Prepare and upsert the local coffee knowledge base.</strong>
+          <p>
+            The script loads the HTML files from <code>coffee_pages</code>, adds
+            category metadata, splits them into chunks, embeds them, and upserts
+            them to Pinecone under the <code>adaptive-rag</code> namespace using
+            deterministic IDs. This happens on each run before retrieval.
+          </p>
+        </li>
+        <li>
+          <strong>Choose Simple Similarity for this wording.</strong>
+          <p>
+            <code>choose_strategy()</code> checks for a category plus a metadata
+            cue to select Self-Query, then checks for configured broad/comparison
+            phrases to select MultiQuery. Your question has neither, so the code
+            falls through to <code>SIMILARITY</code>. This selection does
+            <em>not</em> mean a document has or has not been found.
+          </p>
+        </li>
+        <li>
+          <strong>Ask Pinecone for up to six candidate passages.</strong>
+          <p>
+            The selected retriever runs <code>.invoke(question)</code>. Similarity
+            search returns its top matches; in this code there is no explicit
+            similarity-score cutoff that says “not found.” Returned documents are
+            deduplicated by source and text.
+          </p>
+        </li>
+        <li>
+          <strong>Ask the CRAG grader if those passages can answer the question.</strong>
+          <p>
+            <code>correct_retrieval()</code> first asks local Ollama to assess each
+            passage individually and keeps passages marked relevant. It then asks
+            whether those selected passages together are sufficient. This is a
+            model judgment—not a Pinecone “not found” response or a numeric
+            similarity threshold.
+          </p>
+        </li>
+        <li>
+          <strong>Try alternate web providers only when local evidence is insufficient.</strong>
+          <p>
+            If Pinecone returned no documents, grading is skipped and web search
+            is called. If the grader finds no relevant passage or judges the
+            selected passages insufficient, the web fallback is called. When it
+            runs, the original question is sent to Yahoo, Brave, Startpage, then
+            Mojeek, stopping at the first provider with usable results. If local
+            evidence is sufficient, the code keeps it and skips web search.
+          </p>
+        </li>
+        <li>
+          <strong>Rerank evidence and generate the answer.</strong>
+          <p>
+            Web results with snippets become documents. The CrossEncoder ranks
+            the chosen evidence and keeps up to three passages; then Ollama
+            generates an answer using only those passages and cites their source.
+            If web search yields no usable snippets, the program stops instead.
+          </p>
+        </li>
+      </ol>
+      <p class="note">
+        <strong>In short:</strong> Pinecone supplies candidates; the local Ollama
+        grader checks individual passages, then the sufficiency of the selected
+        evidence. An empty candidate list or insufficient local evidence triggers
+        web search. There is no separate Pinecone score threshold in the current
+        code.
+      </p>
+      <h3>Sample checks against the current Pinecone namespace</h3>
+      <p class="muted">
+        These examples were tested with local Ollama grading and web search
+        deliberately blocked.
+      </p>
+      <div class="routes">
+        <article class="route-card">
+          <h3>Answered locally</h3>
+          <p>“How do I make cold brew coffee?”</p>
+          <p>Kept <code>cold_brew.html</code>; no web search.</p>
+        </article>
+        <article class="route-card">
+          <h3>Answered locally</h3>
+          <p>“What is espresso and how is it brewed?”</p>
+          <p>Kept <code>espresso.html</code>; no web search.</p>
+        </article>
+        <article class="route-card">
+          <h3>Answered locally</h3>
+          <p>“What is pour-over coffee?”</p>
+          <p>Kept <code>pour_over.html</code>; no web search.</p>
+        </article>
+        <article class="route-card">
+          <h3>Web fallback requested</h3>
+          <p>“What is the best restaurant for cold coffee in Bangalore?”</p>
+          <p>The local pages contain no restaurant recommendations.</p>
+        </article>
+        <article class="route-card">
+          <h3>More detail needed</h3>
+          <p>“How do I make pour-over coffee?”</p>
+          <p>The local page describes the method but lacks a complete recipe.</p>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="routes-heading">
+      <h2 id="routes-heading">Which route fits which question?</h2>
+      <div class="routes">
+        <article class="route-card">
+          <h3>Simple similarity</h3>
+          <p>
+            Choose this for a direct question without a special routing cue.
+            Pinecone returns semantically similar chunks.
+          </p>
+          <span class="example">“How is cold brew coffee made?”</span>
+        </article>
+        <article class="route-card">
+          <h3>MultiQuery</h3>
+          <p>
+            Choose this for broad or comparative questions. The local LLM creates
+            alternate phrasings; retrieval includes the original question too.
+          </p>
+          <span class="example">“Compare different coffee brewing methods.”</span>
+        </article>
+        <article class="route-card">
+          <h3>Self-Query</h3>
+          <p>
+            Choose this when a known category is paired with a metadata cue. The
+            LLM creates a semantic query and a Pinecone metadata filter.
+          </p>
+          <span class="example">“Find the cold brew guide.”</span>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="crag-heading">
+      <h2 id="crag-heading">CRAG: what happens when evidence is missing?</h2>
+      <ul class="scenario-list">
+        <li>
+          <strong>Local evidence is sufficient:</strong> Keep local passages, skip
+          web search, rerank with the CrossEncoder, and answer from the top three.
+        </li>
+        <li>
+          <strong>Local evidence is insufficient or empty:</strong> Search
+          try Yahoo, Brave, Startpage, then Mojeek, turn results with snippets
+          into evidence documents, rerank, and answer from the top results.
+        </li>
+        <li>
+          <strong>No usable web snippets:</strong> Stop rather than generate an
+          answer without supporting context.
+        </li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="notes-heading">
+      <h2 id="notes-heading">Notes about this learning example</h2>
+      <p class="note">
+        The strategy router uses keyword rules, while the CRAG sufficiency check
+        uses the local Ollama model. When the fallback runs, the question is sent
+        to the first configured search provider that returns usable results. The
+        embeddings use Ollama's <code>nomic-embed-text</code> model in the
+        separate Pinecone index <code>coffeeindex-ollama</code>; the CrossEncoder
+        reranker still downloads its model from Hugging Face if it is not cached.
+        Pinecone is a hosted database, so upserting and retrieving vectors still
+        require a network connection. Pull the embedding model with
+        <code>ollama pull nomic-embed-text</code> before running. The runnable
+        Python implementation is
+        <code>adaptive_rag_learning.py</code>.
+      </p>
+    </section>
+  </main>
+</body>
+</html>

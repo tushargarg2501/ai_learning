@@ -8,6 +8,7 @@ python-dotenv
 xgboost
 scikit-learn
 langchain-community
+ddgs
 unstructured
 langchain-text-splitters
 sentence-transformers

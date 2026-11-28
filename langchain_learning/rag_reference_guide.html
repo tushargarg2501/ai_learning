@@ -1,0 +1,949 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta
+    name="description"
+    content="A practical reference guide to RAG, vector stores, similarity metrics, HNSW, MultiQuery, Self-Query, CRAG, and Adaptive RAG."
+  >
+  <title>RAG Field Guide: From Embeddings to Adaptive RAG</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #1d2b3f;
+      background: #edf2f8;
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    .cover {
+      min-height: 72vh;
+      display: flex;
+      align-items: center;
+      color: #fff;
+      background:
+        radial-gradient(ellipse at 82% 18%, rgb(111 166 232 / 35%), transparent 35%),
+        linear-gradient(135deg, #102d4e, #244c7e 65%, #315c91);
+    }
+
+    .cover-inner,
+    main,
+    footer {
+      width: min(940px, 100%);
+      margin-inline: auto;
+    }
+
+    .cover-inner {
+      padding: 5rem 2rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 1rem;
+      color: #bbd5f4;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(2.5rem, 7vw, 4.8rem);
+      line-height: 1.03;
+      letter-spacing: -0.035em;
+    }
+
+    .subtitle {
+      max-width: 660px;
+      margin: 1.5rem 0 0;
+      color: #e0ebf9;
+      font-size: 1.2rem;
+    }
+
+    .cover-meta {
+      margin-top: 3rem;
+      color: #c4d7ed;
+      font-size: 0.95rem;
+    }
+
+    main {
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    section {
+      margin: 2rem 0;
+      padding: clamp(1.25rem, 4vw, 2.4rem);
+      border: 1px solid #dce5ef;
+      border-radius: 16px;
+      background: #fff;
+      box-shadow: 0 9px 28px rgb(22 46 77 / 5%);
+    }
+
+    h2 {
+      margin: 0 0 1rem;
+      color: #173c66;
+      font-size: 1.8rem;
+      line-height: 1.2;
+    }
+
+    h3 {
+      margin: 1.5rem 0 0.4rem;
+      color: #244b74;
+      font-size: 1.2rem;
+      line-height: 1.35;
+    }
+
+    h4 {
+      margin: 1rem 0 0.3rem;
+      color: #334e6b;
+      font-size: 1rem;
+    }
+
+    p {
+      margin: 0.7rem 0;
+    }
+
+    ul,
+    ol {
+      padding-left: 1.4rem;
+    }
+
+    li {
+      margin: 0.35rem 0;
+    }
+
+    a {
+      color: #225ea8;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    .toc {
+      columns: 2;
+      column-gap: 2.5rem;
+      padding-left: 1.2rem;
+    }
+
+    .toc li {
+      break-inside: avoid;
+      margin: 0.45rem 0;
+    }
+
+    .callout {
+      margin: 1.1rem 0;
+      padding: 1rem 1.15rem;
+      border-left: 4px solid #3777b8;
+      border-radius: 8px;
+      background: #eff6fd;
+    }
+
+    .callout.warning {
+      border-left-color: #d38b25;
+      background: #fff8eb;
+    }
+
+    .callout.success {
+      border-left-color: #229879;
+      background: #eef9f5;
+    }
+
+    .diagram {
+      overflow-x: auto;
+      margin: 1.2rem 0;
+      padding: 1.15rem;
+      border: 1px solid #dfe7f1;
+      border-radius: 12px;
+      background: #f8fafd;
+      color: #294361;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.87rem;
+      line-height: 1.7;
+      white-space: pre;
+    }
+
+    .formula {
+      overflow-x: auto;
+      margin: 1rem 0;
+      padding: 1rem;
+      border-radius: 10px;
+      background: #f5f7fb;
+      color: #173c66;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      text-align: center;
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .card {
+      padding: 1rem;
+      border: 1px solid #e0e7f0;
+      border-radius: 12px;
+      background: #fbfcfe;
+    }
+
+    .card h3,
+    .card h4 {
+      margin-top: 0;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.94rem;
+    }
+
+    th,
+    td {
+      padding: 0.75rem;
+      border: 1px solid #dfe6ef;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: #173c66;
+      background: #eff4fa;
+    }
+
+    code {
+      padding: 0.12em 0.32em;
+      border-radius: 4px;
+      background: #eef2f6;
+      color: #253d57;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9em;
+      overflow-wrap: anywhere;
+    }
+
+    pre.code {
+      overflow-x: auto;
+      margin: 1rem 0;
+      padding: 1rem 1.2rem;
+      border-radius: 10px;
+      background: #17283d;
+      color: #eef5fc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      white-space: pre;
+    }
+
+    .small {
+      color: #5b6b7e;
+      font-size: 0.9rem;
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 0 0.25rem 0.25rem 0;
+      padding: 0.18rem 0.5rem;
+      border-radius: 999px;
+      background: #eaf1fa;
+      color: #2a527b;
+      font-size: 0.82rem;
+      font-weight: 650;
+    }
+
+    footer {
+      padding: 0 1.5rem 3rem;
+      color: #627185;
+      font-size: 0.88rem;
+    }
+
+    @media (max-width: 620px) {
+      .cover {
+        min-height: 62vh;
+      }
+
+      .toc {
+        columns: 1;
+      }
+
+      section {
+        border-radius: 12px;
+      }
+    }
+
+    @media print {
+      :root {
+        background: #fff;
+        font-size: 10.5pt;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      .cover {
+        min-height: 0;
+        height: 245mm;
+        break-after: page;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .cover-inner {
+        padding: 25mm 18mm;
+      }
+
+      main {
+        width: auto;
+        padding: 0 13mm;
+      }
+
+      section {
+        margin: 0;
+        padding: 10mm 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        break-inside: auto;
+      }
+
+      h2,
+      h3,
+      h4 {
+        break-after: avoid;
+      }
+
+      .card,
+      .callout,
+      tr,
+      .diagram {
+        break-inside: avoid;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .diagram,
+      pre.code {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      footer {
+        width: auto;
+        padding: 5mm 13mm;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="cover">
+    <div class="cover-inner">
+      <p class="eyebrow">A practical learning reference</p>
+      <h1>RAG Field Guide</h1>
+      <p class="subtitle">
+        From documents and vectors to similarity search, HNSW, MultiQuery,
+        Self-Query, CRAG, and Adaptive RAG—with coffee examples throughout.
+      </p>
+      <p class="cover-meta">
+        Concepts · worked examples · formulas · project notes · production checklist
+      </p>
+    </div>
+  </header>
+
+  <main>
+    <section id="start">
+      <h2>How to use this guide</h2>
+      <p>
+        This guide builds from the basic RAG pipeline to the retrieval strategies
+        you explored in your coffee project. Read it in order the first time, then
+        use the contents as a refresher.
+      </p>
+      <div class="callout success">
+        <strong>The core idea:</strong> retrieve relevant evidence first, then ask
+        a language model to answer using that evidence. The model is not expected
+        to memorize every fact in your documents.
+      </div>
+      <ol class="toc">
+        <li><a href="#rag">RAG: the big picture</a></li>
+        <li><a href="#ingestion">Preparing and storing documents</a></li>
+        <li><a href="#vectors">Embeddings and vector search</a></li>
+        <li><a href="#metrics">Cosine similarity and Euclidean distance</a></li>
+        <li><a href="#hnsw">How HNSW works</a></li>
+        <li><a href="#retrieval">Similarity retrieval</a></li>
+        <li><a href="#multiquery">MultiQuery retrieval</a></li>
+        <li><a href="#selfquery">Self-Query retrieval</a></li>
+        <li><a href="#reranking">Reranking</a></li>
+        <li><a href="#adaptive">Adaptive RAG</a></li>
+        <li><a href="#crag">Corrective RAG (CRAG)</a></li>
+        <li><a href="#project">Your coffee project, traced</a></li>
+        <li><a href="#production">What production readiness adds</a></li>
+        <li><a href="#glossary">Glossary and review questions</a></li>
+      </ol>
+    </section>
+
+    <section id="rag">
+      <h2>1. RAG: the big picture</h2>
+      <p>
+        <strong>Retrieval-Augmented Generation (RAG)</strong> combines a search
+        system with a language model. Rather than asking the model to answer from
+        its training memory alone, the application finds useful material in a
+        knowledge base and places it in the model's context.
+      </p>
+      <div class="diagram">
+Question
+   │
+   ▼
+Find relevant document chunks ──► Assemble evidence/context
+                                         │
+                                         ▼
+                                  LLM writes an answer
+                                         │
+                                         ▼
+                                  Answer + sources
+      </div>
+      <div class="card-grid">
+        <article class="card">
+          <h3>Retrieval</h3>
+          <p>Finds candidate chunks related to the user's question.</p>
+        </article>
+        <article class="card">
+          <h3>Augmentation</h3>
+          <p>Adds those chunks, and often their source metadata, to the prompt.</p>
+        </article>
+        <article class="card">
+          <h3>Generation</h3>
+          <p>Uses the question and retrieved context to produce a natural-language answer.</p>
+        </article>
+      </div>
+      <p>
+        A useful mental model is an <strong>open-book exam</strong>: retrieval finds
+        the pages, and the model explains them. If retrieval misses the needed
+        information, a fluent answer may still be wrong—so good retrieval and
+        evidence checks matter.
+      </p>
+    </section>
+
+    <section id="ingestion">
+      <h2>2. Preparing and storing documents</h2>
+      <p>
+        The ingestion pipeline turns source files into searchable records. It is
+        normally run when content is added or updated, not every time a user asks
+        a question.
+      </p>
+      <ol>
+        <li><strong>Load:</strong> read HTML, PDF, text, or another source format.</li>
+        <li><strong>Clean:</strong> remove navigation, repeated boilerplate, and unusable markup.</li>
+        <li><strong>Split:</strong> divide long content into overlapping chunks.</li>
+        <li><strong>Enrich:</strong> attach useful metadata such as category, source, date, and access scope.</li>
+        <li><strong>Embed:</strong> turn each chunk into a numeric vector.</li>
+        <li><strong>Upsert:</strong> save vector, text, and metadata under an ID in the vector store.</li>
+      </ol>
+      <h3>What is stored?</h3>
+      <pre class="code">{
+  "id": "stable-id-for-this-chunk",
+  "values": [0.12, -0.08, 0.44, "..."],
+  "metadata": {
+    "text": "Cold brew coffee is made by steeping...",
+    "source": "cold_brew.html",
+    "category": "cold_brew"
+  }
+}</pre>
+      <p>
+        The vector is used for nearest-neighbor search. The text is the readable
+        evidence later sent to the LLM. Metadata supports filtering, source display,
+        access checks, and document lifecycle management.
+      </p>
+      <h3>Chunking: too large vs. too small</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Chunking issue</th><th>What can happen</th><th>Practical direction</th></tr></thead>
+          <tbody>
+            <tr><td>Chunks too large</td><td>Useful details are surrounded by unrelated material; context can exceed prompt budget.</td><td>Split along headings, paragraphs, or semantic boundaries; tune using a test set.</td></tr>
+            <tr><td>Chunks too small</td><td>Definitions and their explanations may be separated; retrieved evidence loses context.</td><td>Keep coherent ideas together and add modest overlap when boundaries risk losing meaning.</td></tr>
+            <tr><td>Overlap too high</td><td>Nearly identical chunks are stored and returned repeatedly.</td><td>Deduplicate and choose overlap based on content structure, not by habit.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>IDs and upserts</h3>
+      <p>
+        An <strong>upsert</strong> inserts a new vector or replaces the vector that
+        already has the same ID in the same index and namespace. A stable ID can
+        make ingestion repeatable. If identical content receives different IDs,
+        both records may remain. Changing an embedding model requires re-embedding
+        the corpus and using a compatible index dimension.
+      </p>
+      <div class="callout warning">
+        Metadata must be designed deliberately. In your example, filenames become
+        categories such as <code>cold_brew</code>, <code>espresso</code>, and
+        <code>pour_over</code>. A metadata filter only works if those fields and
+        values were actually stored with the vectors.
+      </div>
+    </section>
+
+    <section id="vectors">
+      <h2>3. Embeddings and vector search</h2>
+      <p>
+        An <strong>embedding model</strong> maps text to a fixed-length list of
+        numbers. Texts that the model considers semantically related often have
+        vectors that are near each other under a chosen distance or similarity
+        metric.
+      </p>
+      <div class="formula">"How do I make cold brew?" ──embed──► [0.18, -0.42, 0.07, ..., 0.31]</div>
+      <p>
+        At query time, the question is embedded using a compatible model. The
+        vector store compares that query vector with stored chunk vectors and
+        returns nearest candidates.
+      </p>
+      <h3>Important compatibility rule</h3>
+      <p>
+        Use the same embedding model (and compatible settings) for documents and
+        questions. The vectors need matching dimensions and a shared embedding
+        space. A vector from one model generally cannot be compared meaningfully
+        with a vector from another model, even if both have the same dimension.
+      </p>
+      <h3>Similarity search is candidate generation</h3>
+      <p>
+        A nearest chunk is not automatically a good answer. If the database only
+        contains coffee-brewing pages, a restaurant question still gets the
+        “nearest” brewing chunks. Search can return the least-distant options even
+        when none truly answer the question. Use relevance checks, thresholds
+        calibrated on data, or a fallback path to handle this.
+      </p>
+      <div class="callout">
+        A vector store usually returns a top <em>k</em> list. “Top results” means
+        best among what is stored—not proof that any result is relevant.
+      </div>
+    </section>
+
+    <section id="metrics">
+      <h2>4. Cosine similarity and Euclidean distance</h2>
+      <p>
+        Both metrics compare vectors, but they measure different geometric
+        properties. Their usefulness depends on the embedding model, normalization,
+        index configuration, and the task.
+      </p>
+      <h3>Cosine similarity: angle / direction</h3>
+      <div class="formula">
+cosine_similarity(A, B) = (A · B) / (||A|| × ||B||)
+      </div>
+      <p>
+        Cosine similarity measures how aligned two vectors are, largely ignoring
+        their magnitudes. Its mathematical range is from -1 to 1; embedding
+        distributions and systems may occupy a narrower range. Larger values mean
+        more aligned directions.
+      </p>
+      <h3>Euclidean distance: straight-line distance</h3>
+      <div class="formula">
+euclidean_distance(A, B) = sqrt( Σᵢ (Aᵢ - Bᵢ)² )
+      </div>
+      <p>
+        Euclidean distance measures straight-line separation. Smaller distance
+        means closer vectors.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Property</th><th>Cosine similarity</th><th>Euclidean distance (L2)</th></tr></thead>
+          <tbody>
+            <tr><td>Measures</td><td>Direction / angle</td><td>Absolute geometric distance</td></tr>
+            <tr><td>Better match</td><td>Higher score</td><td>Lower distance</td></tr>
+            <tr><td>Magnitude matters?</td><td>Mostly no</td><td>Yes</td></tr>
+            <tr><td>Often useful when</td><td>Semantic direction is the intended signal</td><td>Vector magnitudes and geometry are meaningful</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>A tiny example</h3>
+      <p>Let the query be A = (1, 0):</p>
+      <ul>
+        <li>B = (1, 1) points partly in the same direction as A. Its cosine similarity is about 0.707.</li>
+        <li>C = (0, 1) is perpendicular to A. Its cosine similarity is 0.</li>
+        <li>Euclidean distances are distance(A, B) ≈ 1.0 and distance(A, C) ≈ 1.414.</li>
+      </ul>
+      <p>
+        For <strong>unit-normalized</strong> vectors, cosine and Euclidean distance
+        induce the same ranking because
+        <code>||A - B||² = 2(1 - cosine_similarity(A, B))</code>. Without
+        normalization, rankings can differ.
+      </p>
+      <div class="callout warning">
+        Don’t compare raw scores across different models, metrics, or APIs as if
+        they had one universal meaning. A score of 0.7 is not automatically a
+        70% probability of relevance. Calibrate any cutoff on labeled examples.
+      </div>
+    </section>
+
+    <section id="hnsw">
+      <h2>5. How HNSW works</h2>
+      <p>
+        <strong>HNSW</strong> means <em>Hierarchical Navigable Small World</em>.
+        It is an approximate nearest-neighbor indexing method used by some vector
+        search systems. Approximate search trades a small chance of missing the
+        exact nearest neighbor for faster lookup at scale.
+      </p>
+      <p>
+        Think of it as several linked maps of the same points:
+      </p>
+      <div class="diagram">
+Top layer:       A ─────────────── G
+                 │                 │
+Middle layer:    A ─── C ───────── G ─── J
+                 │     │           │     │
+Base layer:      A─B─C─D─E─F─G─H─I─J─K─L
+
+Search: enter at a sparse upper layer, move toward the query,
+descend to denser layers, then refine among nearby candidates.
+      </div>
+      <ol>
+        <li>Start at an entry point in a sparse upper layer.</li>
+        <li>Move greedily to linked points that are closer to the query.</li>
+        <li>Descend to the next, denser layer and continue exploring.</li>
+        <li>Search more candidates in the base layer and return the nearest found.</li>
+      </ol>
+      <p>
+        Common HNSW tuning concepts include <code>M</code> (graph connections),
+        <code>efConstruction</code> (construction-time search breadth), and
+        <code>efSearch</code> (query-time search breadth). More connections or
+        broader search can improve recall but use more memory or latency.
+      </p>
+      <div class="callout warning">
+        HNSW explains one way to implement fast vector search. It does not mean
+        every vector database, including a managed service, exposes or uses HNSW
+        in exactly the same way. Treat Pinecone’s managed indexing internals as
+        provider-specific unless its current documentation says otherwise.
+      </div>
+    </section>
+
+    <section id="retrieval">
+      <h2>6. Basic similarity retrieval</h2>
+      <p>
+        Basic retrieval embeds the question, searches for its nearest vectors, and
+        returns the top <em>k</em> documents. It is a good starting point when the
+        question is clear and the content is well represented in the index.
+      </p>
+      <pre class="code">question = "How do I make cold brew coffee?"
+documents = vector_store.similarity_search(question, k=3)</pre>
+      <p>In the coffee knowledge base, this question should retrieve the cold brew guide:</p>
+      <div class="callout success">
+        <strong>Evidence:</strong> “Cold brew coffee is made by steeping coarse
+        coffee grounds in cool water for an extended time. After steeping, strain
+        the grounds and serve the coffee over ice or dilute it to taste.”
+      </div>
+      <p>
+        Search and answer generation are separate steps. Retrieval returns
+        <code>Document</code> objects; the application must still supply them to
+        an answer model if a generated answer is needed.
+      </p>
+    </section>
+
+    <section id="multiquery">
+      <h2>7. MultiQuery retrieval</h2>
+      <p>
+        Users can express one information need in several ways. MultiQuery asks an
+        LLM to produce alternate phrasings, retrieves for those phrasings, and
+        typically includes the original query too. The returned document lists are
+        combined; duplicates may need to be removed.
+      </p>
+      <div class="diagram">
+Original: "Compare ways to make coffee"
+                │
+                ▼
+LLM query expansion
+   ├── "What are the differences between cold brew and espresso?"
+   ├── "Which coffee brewing methods use hot water?"
+   └── "How do manual and pressure-based coffee methods compare?"
+                │
+                ▼
+Search each query → combine candidate chunks → deduplicate
+      </div>
+      <p>
+        <strong>Use it when:</strong> the question is broad, ambiguous, comparative,
+        or likely to have varied terminology.
+      </p>
+      <p>
+        <strong>Trade-offs:</strong> extra LLM and vector-search work adds latency
+        and cost, and generated queries can drift away from what the user asked.
+        Keep the original query in the search set and evaluate whether expansion
+        improves recall.
+      </p>
+    </section>
+
+    <section id="selfquery">
+      <h2>8. Self-Query retrieval</h2>
+      <p>
+        Self-Query converts a natural-language question into two parts: a semantic
+        search query and, when appropriate, structured metadata filters or
+        constraints.
+      </p>
+      <div class="diagram">
+Question: "Show me only the espresso guide"
+                │
+                ▼
+LLM query constructor
+   ├── Semantic query: "espresso brewing guide"
+   └── Metadata filter: category == "espresso"
+                │
+                ▼
+Vector search + metadata filter → matching chunks
+      </div>
+      <p>
+        <strong>Use it when:</strong> users ask for things such as a category,
+        source, date range, product, or other field that is represented in
+        metadata.
+      </p>
+      <p>
+        <strong>Prerequisites:</strong> metadata must be present and consistently
+        typed; the LLM must know the allowed fields and values; and the query
+        translator must map the generated filter to the vector store's filter
+        syntax.
+      </p>
+      <div class="callout warning">
+        Self-Query is not simply “search the text for a category word.” It is an
+        LLM-assisted structured-query step. In the learning code, the route to
+        Self-Query is separately chosen by simple keyword rules.
+      </div>
+    </section>
+
+    <section id="reranking">
+      <h2>9. Reranking</h2>
+      <p>
+        Retrieval is often tuned to find a broad set of possible matches
+        (high recall). A reranker then examines the question and each candidate
+        together and reorders them by estimated relevance (higher precision).
+      </p>
+      <div class="diagram">
+Question + top 6 retrieved chunks
+               │
+               ▼
+      Cross-Encoder scores each pair
+               │
+               ▼
+        Keep best 3 chunks for answer
+      </div>
+      <p>
+        A <strong>bi-encoder</strong> embeds question and documents separately,
+        which makes large-scale search efficient. A <strong>cross-encoder</strong>
+        reads the question-document pair jointly, often giving a better relevance
+        order at a higher per-candidate cost. Its score is a ranking signal, not
+        necessarily a calibrated probability.
+      </p>
+    </section>
+
+    <section id="adaptive">
+      <h2>10. Adaptive RAG</h2>
+      <p>
+        Adaptive RAG selects a retrieval path based on the question, the available
+        evidence, or system state. The goal is to spend effort where it helps:
+        simple questions can use simple retrieval; broad questions can use query
+        expansion; structured constraints can use metadata filters.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Question pattern</th><th>Strategy</th><th>Coffee example</th></tr></thead>
+          <tbody>
+            <tr><td>Direct, specific fact</td><td>Simple similarity</td><td>“How is cold brew made?”</td></tr>
+            <tr><td>Broad or comparative; wording may miss relevant terms</td><td>MultiQuery</td><td>“Compare different coffee brewing methods.”</td></tr>
+            <tr><td>Explicit structured constraint</td><td>Self-Query</td><td>“Find the espresso guide.”</td></tr>
+            <tr><td>Retrieved evidence does not answer the question</td><td>CRAG-style correction / web fallback</td><td>“Which restaurant in Bangalore serves cold coffee?”</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout">
+        Adaptive RAG is an orchestration idea, not one particular model or
+        retriever. The router can be rules-based, model-based, or learned from
+        evaluated examples. A simple router is easier to understand, but it may
+        miss paraphrases or choose the wrong path.
+      </div>
+      <h3>What your learning example currently does</h3>
+      <ul>
+        <li>Routes to Self-Query if a known category and a metadata cue are present.</li>
+        <li>Otherwise routes to MultiQuery if it sees configured comparison/breadth phrases.</li>
+        <li>Otherwise uses simple similarity search.</li>
+        <li>Then applies a local Ollama evidence check and a web-search fallback if local evidence is insufficient.</li>
+      </ul>
+      <p>
+        This is a transparent keyword-based teaching router, not yet a general
+        intent classifier. The exact code is in
+        <code>adaptive_rag_learning.py</code>.
+      </p>
+    </section>
+
+    <section id="crag">
+      <h2>11. Corrective RAG (CRAG)</h2>
+      <p>
+        CRAG adds a correction step after retrieval. It checks whether retrieved
+        evidence is useful and sufficient; if not, the system can refine retrieval,
+        search another source, or decline to answer.
+      </p>
+      <div class="diagram">
+Question → local retrieval → grade evidence
+                               │
+                 ┌─────────────┴─────────────┐
+                 │                           │
+          Sufficient evidence         Insufficient / empty
+                 │                           │
+          Keep local evidence        Search fallback source
+                 │                           │
+                 └─────────────┬─────────────┘
+                               ▼
+                     Rerank → grounded answer
+      </div>
+      <p>
+        In your example, Ollama grades Pinecone passages individually, keeps
+        relevant ones, then judges whether the selected evidence is enough for the
+        question. If not—or if no passages were returned—the code tries
+        <span class="tag">Yahoo</span><span class="tag">Brave</span>
+        <span class="tag">Startpage</span><span class="tag">Mojeek</span>
+        in sequence and stops at the first provider returning usable results.
+      </p>
+      <div class="callout warning">
+        The grader is an LLM and can be wrong. It may reject a useful short passage
+        or accept weak evidence. Test it on representative questions. Also, the
+        search fallback sends the user's query to an external provider.
+      </div>
+      <p>
+        The current fallback converts search-result snippets into documents; it
+        does not fetch or independently verify every linked webpage. Source URLs
+        should therefore be treated as references, not proof that the full page
+        was checked.
+      </p>
+    </section>
+
+    <section id="project">
+      <h2>12. Your coffee RAG, end to end</h2>
+      <p>The current demo has three small source pages:</p>
+      <ul>
+        <li><code>cold_brew.html</code>: steep coarse grounds in cool water; strain; serve over ice or dilute.</li>
+        <li><code>espresso.html</code>: force hot water through fine grounds under pressure; a balanced espresso has sweetness, acidity, and a pleasant finish.</li>
+        <li><code>pour_over.html</code>: pour hot water over grounds in a filter, slowly and evenly.</li>
+      </ul>
+      <h3>Current project configuration</h3>
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            <tr><th>Embedding model</th><td>Ollama <code>nomic-embed-text</code>, 768 dimensions in the tested setup</td></tr>
+            <tr><th>Vector store</th><td>Pinecone index <code>coffeeindex-ollama</code>; namespace <code>adaptive-rag</code></td></tr>
+            <tr><th>Chat / grader</th><td>Local Ollama <code>llama3.2:3b</code></td></tr>
+            <tr><th>Search fallback</th><td>Yahoo → Brave → Startpage → Mojeek (first usable results)</td></tr>
+            <tr><th>Reranker</th><td>Cross-Encoder model, downloaded from Hugging Face if not cached</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Sample questions and expected route</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Question</th><th>What the demo should do</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>“How do I make cold brew coffee?”</td><td>Simple retrieval; answer from local cold-brew page.</td><td>The local page directly contains the basic steps.</td></tr>
+            <tr><td>“What is espresso and how is it brewed?”</td><td>Simple retrieval; answer from local espresso page.</td><td>The local page defines espresso and its brewing method.</td></tr>
+            <tr><td>“Find the espresso guide.”</td><td>Self-Query route.</td><td>Category plus a metadata cue can create a category filter.</td></tr>
+            <tr><td>“Compare different coffee brewing methods.”</td><td>MultiQuery route.</td><td>“Compare” and “different” signal a broad comparison.</td></tr>
+            <tr><td>“Best restaurant for cold coffee in Bangalore?”</td><td>Try local retrieval, then web fallback if the grader rejects it.</td><td>The three local pages contain no restaurant or location recommendations.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warning">
+        Pinecone is a hosted service: embedding can be local while upsert and
+        retrieval still require network access. The script currently ingests and
+        upserts the sample pages during startup. This is convenient for learning,
+        but production systems normally separate ingestion from user queries.
+      </div>
+    </section>
+
+    <section id="production">
+      <h2>13. What production readiness adds</h2>
+      <p>
+        A RAG system can demonstrate many techniques and still not be production
+        ready. Production readiness means the whole service is reliable, secure,
+        measurable, maintainable, and suitable for its intended users.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Area</th><th>Questions to answer before production</th></tr></thead>
+          <tbody>
+            <tr><td>Ingestion</td><td>How are changes detected, versions tracked, stale vectors removed, and retries made safe?</td></tr>
+            <tr><td>Retrieval quality</td><td>Does a test set measure recall, precision, filters, and retrieval failures?</td></tr>
+            <tr><td>Answer quality</td><td>Are claims supported by cited passages? What happens when evidence is weak?</td></tr>
+            <tr><td>Security</td><td>Are secrets managed securely? Are tenant and document permissions enforced at retrieval time?</td></tr>
+            <tr><td>Prompt injection</td><td>Are retrieved documents treated as untrusted data and prevented from overriding system instructions?</td></tr>
+            <tr><td>Operations</td><td>Are there timeouts, retries, rate limits, concurrency controls, and clear dependency-failure behavior?</td></tr>
+            <tr><td>Monitoring</td><td>Are latency, search quality, fallback rate, errors, model versions, and cost recorded without leaking sensitive text?</td></tr>
+            <tr><td>Privacy</td><td>Which data can be sent to a hosted vector service or external web search?</td></tr>
+            <tr><td>Cost and scale</td><td>Are embedding, query expansion, reranking, and generation costs bounded and understood?</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Practical next steps for this demo</h3>
+      <ol>
+        <li>Move document loading and vector upserts into a separate ingestion command.</li>
+        <li>Create a small, labeled evaluation set covering each route and “not in knowledge base” questions.</li>
+        <li>Measure retrieval quality and grader false-accept / false-reject rates before tuning thresholds.</li>
+        <li>Handle search-provider and model failures with explicit, user-friendly outcomes.</li>
+        <li>Make source citations traceable to the exact chunks used in each answer.</li>
+        <li>Decide whether user queries may be sent to external search providers.</li>
+      </ol>
+    </section>
+
+    <section id="glossary">
+      <h2>14. Glossary and review questions</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Term</th><th>Plain-language meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Document</td><td>A source item or a piece of it, often represented by text plus metadata.</td></tr>
+            <tr><td>Chunk</td><td>A manageable segment of a larger document that can be embedded and retrieved.</td></tr>
+            <tr><td>Embedding</td><td>A vector representation of text produced by an embedding model.</td></tr>
+            <tr><td>Vector store</td><td>A system that stores vectors and supports nearest-neighbor search and often metadata filters.</td></tr>
+            <tr><td>Top-k</td><td>The k highest-ranked candidates returned by a search.</td></tr>
+            <tr><td>Metadata filter</td><td>A structured condition, such as category equals espresso, applied to records.</td></tr>
+            <tr><td>Recall</td><td>How many of the truly relevant items retrieval manages to find.</td></tr>
+            <tr><td>Precision</td><td>How many returned items are actually relevant.</td></tr>
+            <tr><td>Reranker</td><td>A second-stage model that reorders retrieved candidates for a specific query.</td></tr>
+            <tr><td>Grounding</td><td>Constraining an answer to evidence supplied in context and citing that evidence.</td></tr>
+            <tr><td>Fallback</td><td>An alternate path used when the preferred retrieval path cannot answer.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Quick self-check</h3>
+      <ol>
+        <li>Why can a nearest Pinecone result still be irrelevant?</li>
+        <li>What must stay compatible between document embeddings and query embeddings?</li>
+        <li>How is Self-Query different from MultiQuery?</li>
+        <li>Why can MultiQuery improve recall, and what does it cost?</li>
+        <li>What does a CRAG grader decide, and why can it be wrong?</li>
+        <li>Why is local Ollama generation not the same as a fully offline application?</li>
+      </ol>
+      <div class="callout success">
+        <strong>One-sentence summary:</strong> RAG retrieves evidence; embeddings and
+        vector search make retrieval practical; MultiQuery and Self-Query improve
+        how queries are expressed; reranking improves ordering; Adaptive RAG
+        chooses a path; CRAG checks whether the evidence is good enough and
+        corrects the path when it is not.
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Built as a study reference for the coffee RAG learning project. Model behavior,
+    vector scores, and provider capabilities can change; validate important
+    decisions against your own data and current service documentation.
+  </footer>
+</body>
+</html>
